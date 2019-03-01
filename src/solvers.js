@@ -47,7 +47,7 @@ window.findNQueensSolution = function(n) {
     return [];
   }
   var board = new Board({n:n});
-  var solutions = findAllQueensSolutions(n, board, 0);
+  var solutions = findAllQueensSolutions(board, 0);
   if (solutions.length === 0) {
     return createBoardArray(new Board({n:n}));
   }
@@ -67,16 +67,16 @@ window.countNQueensSolutions = function(n) {
   }
   
   var board = new Board({n:n});
-  var solutions = findAllQueensSolutions(n, board, 0);
+  var solutions = findAllQueensSolutions(board, 0);
 
   console.log('Number of solutions for ' + n + ' queens:', solutions.length);
   
   return solutions.length;
 };
 
-window.findAllQueensSolutions = function(n, board, row) {
+window.findAllQueensSolutions = function(board, row) {
   var allBoards = []; // store all board Arrays for each index from 0 to n - 1;
-  
+  var n = board.get('n');
   for (let c = 0; c < n; c++) {
     //place a piece at row 'row' and col 'c'
     board.togglePiece(row, c);
@@ -88,7 +88,7 @@ window.findAllQueensSolutions = function(n, board, row) {
         allBoards.push(createBoardArray(board));
         board.togglePiece(row, c);
       } else {
-        var nextBoards = findAllQueensSolutions(n, board, row + 1);
+        var nextBoards = findAllQueensSolutions(board, row + 1);
         for (let b = 0; b < nextBoards.length; b++) {
           allBoards.push(nextBoards[b]);
         }
@@ -127,8 +127,70 @@ window.hasAnyConflicts = function(board) {
   if (board.hasAnyMinorDiagonalConflicts()) {
     return true;
   }
-  return false
-}
+  return false;
+};
+
+window.timer = function(callback, argument1, argument2) {
+  var start = Date.now();
+  callback(argument1, argument2);
+  var end = Date.now();
+  var elapsedTime = (end - start)/1000;
+  console.log("For " + argument1 + " Queens: " + elapsedTime.toFixed(2)+ " seconds");
+};
+
+window.optimizeFindNQueenSolutions = function(n, columnObj, majorObj, minorObj, row) {
+  // create 3 objects for columns, major and minor diagonal indexes
+  columnObj = columnObj || {};
+  majorObj = majorObj || {};
+  minorObj = minorObj || {};
+  row = row || 0;
+  var count = 0;
+  
+  // iterate through columns
+  for (let c = 0; c < n; c++) {
+    // check column object for conflict
+    // check major object for conflict
+    // check minor object for conflict
+    if (optimiseCheckForConflicts(c, row, columnObj, majorObj, minorObj)) {
+      // if there's conflict, continue the iteration;
+      continue;
+    } else {
+      // else check if last row
+      if (row + 1 === n) {
+        // if last row, add one to count
+        return 1;
+      } else {
+        columnObj[c] = c;
+        majorObj[c - row] = c - row;
+        minorObj[c + row] = c + row;
+        count += optimizeFindNQueenSolutions(n, columnObj, majorObj, minorObj, row + 1);
+        // remove position attributes from all three objects
+        delete columnObj[c];
+        delete majorObj[c - row];
+        delete minorObj[c + row];
+      }
+    }
+  }
+  // return count
+  return count;
+    
+};
+
+window.optimiseCheckForConflicts = function(column, row, columnObj, majorObj, minorObj) {
+  var majorInd = column - row;
+  var minorInd = column + row;
+  
+  if (majorObj[majorInd] !== undefined) {
+    return true;
+  }
+  if (minorObj[minorInd] !== undefined) {
+    return true;
+  }
+  if (columnObj[column] !== undefined) {
+    return true;
+  }
+  return false;
+};
 
 
 
